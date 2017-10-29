@@ -1,0 +1,27 @@
+{
+  "name": "oneshot",
+  "version": "0.0.1",
+  "description": "A webhook receiver app launching a shell command.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msz/oneshot.git"
+  },
+  "keywords": [
+    "webhook",
+    "receiver",
+    "node"
+  ],
+  "author": "Michał Szewczak",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/msz/oneshot/issues"
+  },
+  "homepage": "https://github.com/msz/oneshot#readme",
+  "devDependencies": {
+    "@types/node": "^8.0.47"
+  }
+}
