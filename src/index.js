@@ -16,6 +16,7 @@ function methodNotSupported(response) {
 http.createServer(async (request, response) => {
   if (request.method !== 'POST') {
     methodNotSupported(response);
+    return;
   }
   let responseData;
   try {
