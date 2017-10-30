@@ -1,3 +1,4 @@
 {
+  "auth": "none",
   "command": "echo \"Hello from a oneshot webhook!\""
 }
