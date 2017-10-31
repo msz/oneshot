@@ -6,6 +6,7 @@ const defaultConfig = require('./default-config.json');
 const userConfig = require('./config.json');
 
 const config = Object.assign(defaultConfig, userConfig);
+const githubSignatureHeader = 'x-hub-signature';
 
 function validateHmac(digest, payload) {
   const key = process.env.AUTH_KEY;
@@ -17,7 +18,7 @@ function validateHmac(digest, payload) {
 }
 
 function validateGithub(headers, body) {
-  const digest = headers['X-Hub-Signature'].match(/sha1=(.*)/)[1];
+  const digest = headers[githubSignatureHeader].match(/sha1=(.*)/)[1];
   return validateHmac(digest, body);
 }
 
