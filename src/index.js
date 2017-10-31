@@ -1,5 +1,4 @@
 const http = require('http');
-const fs = require('fs');
 const util = require('util');
 const crypto = require('crypto');
 const exec = util.promisify(require('child_process').exec);
@@ -11,7 +10,7 @@ const config = Object.assign(defaultConfig, userConfig);
 function validateHmac(digest, payload) {
   const key = process.env.AUTH_KEY;
   if (!key) {
-    throw new Error("Tried to validate the request but AUTH_KEY environment variable is not set!");
+    throw new Error('Tried to validate the request but AUTH_KEY environment variable is not set!');
   }
   const ourDigest = crypto.createHmac('sha1', key).update(payload).digest('hex');
   return crypto.timingSafeEqual(digest, ourDigest);
@@ -23,20 +22,20 @@ function validateGithub(headers, body) {
 }
 
 function methodNotSupported(response) {
-  response.writeHead(405, {'Allow': 'POST'})
-  response.write("Method not allowed");
-  response.end()
+  response.writeHead(405, { Allow: 'POST' });
+  response.write('Method not allowed');
+  response.end();
 }
 
 function internalServerError(response) {
   response.writeHead(500);
-  response.write("Internal server error");
+  response.write('Internal server error');
   response.end();
 }
 
 function forbidden(response) {
   response.writeHead(403);
-  response.write("Forbidden");
+  response.write('Forbidden');
   response.end();
 }
 
@@ -47,10 +46,9 @@ function processRequest(request, response) {
   }
   let requestData = '';
 
-  request.on('data', data => {
+  request.on('data', (data) => {
     requestData += data;
-    if (requestData.length > 5 * 1000 * 1000)
-      request.connection.destroy();
+    if (requestData.length > 5 * 1000 * 1000) { request.connection.destroy(); }
   });
 
   request.on('end', async () => {
@@ -66,26 +64,25 @@ function processRequest(request, response) {
       responseData = {
         errorCode: 0,
         stdout,
-        stderr
-      }
-    } catch(e) {
+        stderr,
+      };
+    } catch (e) {
       responseData = {
         errorCode: e.code,
         stdout: e.stdout,
         stderr: e.stderr,
-      }
+      };
     }
-    response.writeHead(200, {'Content-Type': 'application/json'})
+    response.writeHead(200, { 'Content-Type': 'application/json' });
     response.write(JSON.stringify(responseData, null, 2));
     response.end();
   });
-
 }
 
 http.createServer(async (request, response) => {
   try {
     processRequest(request, response);
-  } catch(e) {
+  } catch (e) {
     console.error(e);
     internalServerError(response);
   }
