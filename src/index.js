@@ -53,7 +53,7 @@ function processRequest(request, response) {
       request.connection.destroy();
   });
 
-  request.on('end', () => {
+  request.on('end', async () => {
     if (config.auth === 'github'
       && !validateGithub(request.headers, requestData)) {
       forbidden(response);
