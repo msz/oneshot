@@ -8,6 +8,28 @@ const userConfig = require('./config.json');
 const config = Object.assign(defaultConfig, userConfig);
 const githubSignatureHeader = 'x-hub-signature';
 
+const responses = {
+  methodNotSupported: {
+    head: {
+      code: 405,
+      headers: { Allow: 'Post' },
+    },
+    body: 'Only POST is allowed',
+  },
+  internalServerError: {
+    head: {
+      code: 500,
+    },
+    body: 'Internal server error',
+  },
+  forbidden: {
+    head: {
+      code: 403,
+    },
+    body: 'Forbidden',
+  },
+};
+
 function validateHmac(digest, payload) {
   const key = process.env.AUTH_KEY;
   if (!key) {
@@ -22,28 +44,9 @@ function validateGithub(headers, body) {
   return validateHmac(digest, body);
 }
 
-function methodNotSupported(response) {
-  response.writeHead(405, { Allow: 'POST' });
-  response.write('Method not allowed');
-  response.end();
-}
-
-function internalServerError(response) {
-  response.writeHead(500);
-  response.write('Internal server error');
-  response.end();
-}
-
-function forbidden(response) {
-  response.writeHead(403);
-  response.write('Forbidden');
-  response.end();
-}
-
-async function processRequest(request, response) {
+async function processRequest(request) {
   if (request.method !== 'POST') {
-    methodNotSupported(response);
-    return;
+    return responses.methodNotSupported;
   }
   let requestData = '';
 
@@ -54,37 +57,56 @@ async function processRequest(request, response) {
   await new Promise((resolve) => {
     request.on('end', resolve);
   });
+
+  console.info(`Got request data: ${requestData}`);
+
   if (config.auth === 'github'
       && !validateGithub(request.headers, requestData)) {
-    forbidden(response);
-    return;
+    return responses.forbidden;
   }
 
-  let responseData;
+  let responseBody;
   try {
     const { stdout, stderr } = await exec(config.command);
-    responseData = {
+    responseBody = {
       errorCode: 0,
       stdout,
       stderr,
     };
   } catch (e) {
-    responseData = {
+    responseBody = {
       errorCode: e.code,
       stdout: e.stdout,
       stderr: e.stderr,
     };
   }
-  response.writeHead(200, { 'Content-Type': 'application/json' });
-  response.write(JSON.stringify(responseData, null, 2));
+  return {
+    head: {
+      code: 200,
+      headers: { 'Content-Type': 'application/json' },
+    },
+    body: JSON.stringify(responseBody, null, 2),
+  };
+}
+
+function sendResponse(response, responseData) {
+  response.writeHead(responseData.head.code, responseData.head.headers || {});
+  response.write(responseData.body);
   response.end();
 }
 
 http.createServer(async (request, response) => {
   try {
-    await processRequest(request, response);
+    console.info(`Got request: \n${JSON.stringify({
+      method: request.method,
+      url: request.url,
+      headers: request.headers,
+    }, null, 2)}`);
+    const responseData = await processRequest(request);
+    console.info(`Sending response: \n${JSON.stringify(responseData)}`);
+    sendResponse(response, responseData);
   } catch (e) {
     console.error(e);
-    internalServerError(response);
+    sendResponse(response, responses.internalServerError);
   }
-}).listen(8080, console.log);
+}).listen(8080);
