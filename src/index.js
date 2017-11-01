@@ -40,7 +40,7 @@ function forbidden(response) {
   response.end();
 }
 
-function processRequest(request, response) {
+async function processRequest(request, response) {
   if (request.method !== 'POST') {
     methodNotSupported(response);
     return;
@@ -51,38 +51,38 @@ function processRequest(request, response) {
     requestData += data;
     if (requestData.length > 5 * 1000 * 1000) { request.connection.destroy(); }
   });
-
-  request.on('end', async () => {
-    if (config.auth === 'github'
-      && !validateGithub(request.headers, requestData)) {
-      forbidden(response);
-      return;
-    }
-
-    let responseData;
-    try {
-      const { stdout, stderr } = await exec(config.command);
-      responseData = {
-        errorCode: 0,
-        stdout,
-        stderr,
-      };
-    } catch (e) {
-      responseData = {
-        errorCode: e.code,
-        stdout: e.stdout,
-        stderr: e.stderr,
-      };
-    }
-    response.writeHead(200, { 'Content-Type': 'application/json' });
-    response.write(JSON.stringify(responseData, null, 2));
-    response.end();
+  await new Promise((resolve) => {
+    request.on('end', resolve);
   });
+  if (config.auth === 'github'
+      && !validateGithub(request.headers, requestData)) {
+    forbidden(response);
+    return;
+  }
+
+  let responseData;
+  try {
+    const { stdout, stderr } = await exec(config.command);
+    responseData = {
+      errorCode: 0,
+      stdout,
+      stderr,
+    };
+  } catch (e) {
+    responseData = {
+      errorCode: e.code,
+      stdout: e.stdout,
+      stderr: e.stderr,
+    };
+  }
+  response.writeHead(200, { 'Content-Type': 'application/json' });
+  response.write(JSON.stringify(responseData, null, 2));
+  response.end();
 }
 
 http.createServer(async (request, response) => {
   try {
-    processRequest(request, response);
+    await processRequest(request, response);
   } catch (e) {
     console.error(e);
     internalServerError(response);
