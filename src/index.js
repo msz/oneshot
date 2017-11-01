@@ -103,7 +103,7 @@ http.createServer(async (request, response) => {
       headers: request.headers,
     }, null, 2)}`);
     const responseData = await processRequest(request);
-    console.info(`Sending response: \n${JSON.stringify(responseData)}`);
+    console.info(`Sending response: \n${JSON.stringify(responseData, null, 2)}`);
     sendResponse(response, responseData);
   } catch (e) {
     console.error(e);
