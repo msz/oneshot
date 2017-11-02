@@ -2,11 +2,16 @@ const http = require('http');
 const util = require('util');
 const crypto = require('crypto');
 const exec = util.promisify(require('child_process').exec);
-const defaultConfig = require('./default-config.json');
-const userConfig = require('./config.json');
 
-const config = Object.assign(defaultConfig, userConfig);
 const githubSignatureHeader = 'x-hub-signature';
+const config = {
+  command: process.env.ONESHOT_COMMAND || 'echo "Hello from a oneshot webhook!"',
+  auth: process.env.ONESHOT_AUTH || 'none',
+  authKey: process.env.ONESHOT_AUTH_KEY,
+};
+if (config.auth === 'github' && !config.authKey) {
+  throw new Error('Auth mode set to "github" but AUTH_KEY environment variable is not set!');
+}
 
 const responses = {
   methodNotSupported: {
@@ -31,10 +36,7 @@ const responses = {
 };
 
 function validateHmac(digest, payload) {
-  const key = process.env.AUTH_KEY;
-  if (!key) {
-    throw new Error('Tried to validate the request but AUTH_KEY environment variable is not set!');
-  }
+  const key = config.authKey;
   const ourDigest = crypto.createHmac('sha1', key).update(payload).digest('hex');
   return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(ourDigest));
 }
