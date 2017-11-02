@@ -1,4 +1,4 @@
 FROM node:8.8.1-alpine
 COPY src /oneshot
-EXPOSE 8080
+EXPOSE 80
 CMD ["node", "/oneshot/index.js"]
