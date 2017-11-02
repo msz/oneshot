@@ -36,7 +36,7 @@ function validateHmac(digest, payload) {
     throw new Error('Tried to validate the request but AUTH_KEY environment variable is not set!');
   }
   const ourDigest = crypto.createHmac('sha1', key).update(payload).digest('hex');
-  return crypto.timingSafeEqual(new Buffer(digest), new Buffer(ourDigest));
+  return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(ourDigest));
 }
 
 function validateGithub(headers, body) {
@@ -109,4 +109,4 @@ http.createServer(async (request, response) => {
     console.error(e);
     sendResponse(response, responses.internalServerError);
   }
-}).listen(8080);
+}).listen(80);
