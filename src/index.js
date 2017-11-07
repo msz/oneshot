@@ -8,6 +8,7 @@ const config = {
   command: process.env.ONESHOT_COMMAND || 'echo "Hello from a oneshot webhook!"',
   auth: process.env.ONESHOT_AUTH || 'none',
   authKey: process.env.ONESHOT_AUTH_KEY,
+  port: process.env.ONESHOT_PORT || '80',
 };
 if (config.auth === 'github' && !config.authKey) {
   throw new Error('Auth mode set to "github" but AUTH_KEY environment variable is not set!');
@@ -111,4 +112,4 @@ http.createServer(async (request, response) => {
     console.error(e);
     sendResponse(response, responses.internalServerError);
   }
-}).listen(80);
+}).listen(config.port);
